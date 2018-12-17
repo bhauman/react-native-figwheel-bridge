@@ -9,7 +9,6 @@ var debugEnabled = false;
 var React = require('react');
 var createReactClass = require('create-react-class');
 var ReactNative = require('react-native');
-var WebSocket = require('WebSocket');
 var self;
 var evaluate = eval; // This is needed, direct calls to eval does not work (RN packager???)
 var externalModules = {};
@@ -240,7 +239,6 @@ function figwheelImportScript(uri, callback) {
 function shimBaseGoog(basePath, googBasePath) {
     console.info('Shimming goog functions.');
     goog.basePath = basePath + '/' + googBasePath;
-    goog.global.FIGWHEEL_WEBSOCKET_CLASS = WebSocket;
     goog.global.FIGWHEEL_IMPORT_SCRIPT = figwheelImportScript;
     goog.writeScriptSrcNode = importJs;
     goog.writeScriptTag_ = function (src, optSourceText) {
