@@ -6,7 +6,12 @@
   "scripts": {
     "build": "babel ./figwheel-bridge.js > index.js"
   },
-  "author": "Bruce Hauman",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/bhauman/react-native-figwheel-bridge.git"
+  },
+  "homepage": "https://github.com/bhauman/react-native-figwheel-bridge",
+  "author": "Bruce Hauman <bhauman@gmail.com> (https://rigsomelight.com)",
   "license": "ISC",
   "devDependencies": {
     "@babel/cli": "^7.0.0",
