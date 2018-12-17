@@ -1,0 +1,17 @@
+{
+  "name": "react-native-figwheel-bridge",
+  "version": "1.0.0",
+  "description": "Enables ReactNative projects written in  ClojureScript to use Figwheel's live reloading and REPL.",
+  "main": "index.js",
+  "scripts": {
+    "build": "babel ./figwheel-bridge.js > index.js"
+  },
+  "author": "Bruce Hauman",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/cli": "^7.0.0",
+    "@babel/core": "^7.0.0",
+    "metro-react-native-babel-preset": "^0.48.5"
+  },
+  "dependencies": {}
+}
