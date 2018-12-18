@@ -79,6 +79,9 @@ Create a `src/awesome/main.cljs` file in the `MyAwesomeProject` directory:
                            :textAlign "center"}}
           (str "HELLO"))))
 
+;; the function figwheel-rn-root must be provided. It will be called by 
+;; react-native-figwheel-bridge to render your application. 
+;; You can configure the name of this function with config.renderFn
 (defn figwheel-rn-root []
   (renderfn {}))
 ```
@@ -227,16 +230,11 @@ and your `src/awesome/main.cljs` file would need to define an
 (defn on-reload [] (goog/figwheelBridgeRefresh))
 ```
 
+## Based on previous work
 
-
-
-
-
-
-
-
-
-
-
+This code heavily modified from the `figwheel-bridge.js` file in
+`https://github.com/drapanjanas/re-natal` which in turn was taken from
+the now non-existant
+`https://github.com/decker405/figwheel-react-native`.
 
 
