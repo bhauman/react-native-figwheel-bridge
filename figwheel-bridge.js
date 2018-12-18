@@ -48,10 +48,17 @@ var figwheelApp = function (config) {
             var app = this;
             if (typeof goog === "undefined") {
                 loadApp(config, function (appRoot) {
-                    app.setState({root: appRoot, loaded: true});
-                    listenForReload(function (e) {
+		    goog.figwheelBridgeRefresh = function () {
+			console.log("Refreshing Figwheel Root Element");
 			app.forceUpdate();
-		    });
+		    };
+                    app.setState({root: appRoot, loaded: true});
+		    if (config.autoRefresh) {
+			listenForReload(function (e) {
+			    console.log("Refreshing Figwheel Root Element");
+			    app.forceUpdate();
+			});
+		    }
                 });
             }
         }
@@ -211,6 +218,7 @@ function validateOptions(options) {
     assertKeyType(options, "outputDir",    "string");
     assertKeyType(options, "outputTo",     "string");
     assertKeyType(options, "mainNs",       "string");
+    assertKeyType(options, "autoRefresh",  "boolean");
     assertKeyType(options, "devHost",      "string");
     assertKeyType(options, "renderFn",     "string");    
 }
@@ -219,7 +227,8 @@ function startApp(options){
     var config = Object.assign({googBasePath: 'goog/',
 				serverPort:   8081,
 				devHost:      'localhost',
-				renderFn:     'figwheel_rn_root'},
+				renderFn:     'figwheel_rn_root',
+			        autoRefresh:  true},
 			       options);
     validateOptions(config);
     ReactNative.AppRegistry.registerComponent(
