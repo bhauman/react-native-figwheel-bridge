@@ -3,12 +3,6 @@
 Enables React Native projects written in ClojureScript to use
 Figwheel's live reloading and REPL.
 
-## Reasoning
-
-React Native and Figwheel have relied on a series of hacks for quite a
-while. Here I'm trying to publish a simple light library that one can
-reply on to boot their ClojureScript application in development mode.
-
 ## Usage
 
 First you will need to make sure you have ReactNative and its
