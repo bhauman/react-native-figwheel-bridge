@@ -129,11 +129,11 @@ function interceptRequire() {
     };
 }
 
-function importIndexJs(fileBasePath) {
-    var src = fileBasePath + '/index.js';
+function importIndexJs(outputToPath) {
+    var src = outputToPath;
     var transformFn = function(code) {
         var defines = code.match(new RegExp ("goog.global.CLOSURE_UNCOMPILED_DEFINES.*?;"));
-        var deps = code.match(/goog.require\(.*?\);/g);
+        var deps = code.match(/goog.require\(.*?\);/g).filter(x => !x.match(/cljs\.nodejscli/g));
         var transformedCode = defines.concat(deps).join('');
         logDebug('transformed index.js: ', transformedCode);
         return transformedCode;
@@ -158,7 +158,7 @@ function cljsNamespaceToObject(ns) {
 
 function serverBaseUrl(config) {
     var host = (isChrome() ? "localhost" : config.devHost);
-    return "http://" + host + ":" + config.serverPort + "/" + config.outputTo;
+    return "http://" + host + ":" + config.serverPort;
 }
 
 function assert(predVal, message) {
@@ -168,14 +168,15 @@ function assert(predVal, message) {
 }
 
 function loadApp(config, onLoadCb) {
-    var fileBasePath = serverBaseUrl(config);
-    var mainJs = cljsNamespaceToPath(config.cljsNs);
+    var fileBasePath = serverBaseUrl(config) + "/" + config.outputDir;
+    var outputToPath = serverBaseUrl(config) + "/" + config.outputTo;
+    var mainJs = cljsNamespaceToPath(config.mainNs);
 
     // callback when app is ready to get the reloadable component
     evalListeners.waitForFinalEval = function (url) {
         if (url.indexOf(mainJs) > -1) {
-	    var mainNsObject = cljsNamespaceToObject(config.cljsNs);
-	    assert(mainNsObject, "ClojureScript Namespace " + config.cljsNs + " not found.");
+	    var mainNsObject = cljsNamespaceToObject(config.mainNs);
+	    assert(mainNsObject, "ClojureScript Namespace " + config.mainNs + " not found.");
 	    assert(mainNsObject[config.renderFn], "Render function " + config.renderFn + " not found.");
             onLoadCb(mainNsObject[config.renderFn]);
             console.info('Done loading Clojure app');
@@ -192,7 +193,7 @@ function loadApp(config, onLoadCb) {
             shimBaseGoog(fileBasePath, config.googBasePath);
             importJs(fileBasePath + '/cljs_deps.js', function () {
                 importJs(fileBasePath + '/goog/deps.js', function () {
-                    importIndexJs(fileBasePath);
+                    importIndexJs(outputToPath);
                 });
             });
         });
@@ -207,8 +208,9 @@ function validateOptions(options) {
     assertKeyType(options, "googBasePath", "string");
     assertKeyType(options, "serverPort",   "number");
     assertKeyType(options, "appName",      "string");
+    assertKeyType(options, "outputDir",    "string");
     assertKeyType(options, "outputTo",     "string");
-    assertKeyType(options, "cljsNs",       "string");
+    assertKeyType(options, "mainNs",       "string");
     assertKeyType(options, "devHost",      "string");
     assertKeyType(options, "renderFn",     "string");    
 }
