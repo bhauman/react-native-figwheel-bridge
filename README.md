@@ -41,7 +41,7 @@ Create a `deps.edn` file in the `MyAwesomeProject` directory:
 
 ```clojure
 {:deps {org.clojure/clojurescript {:mvn/version "1.10.339"}
-        com.bhauman/figwheel-main {:mvn/version "0.2.0-SNAPSHOT"}}}
+        com.bhauman/figwheel-main {:mvn/version "0.2.0"}}}
 ```
 
 Create a `ios.cljs.edn` file in the `MyAwesomeProject` directory:
