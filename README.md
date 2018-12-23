@@ -104,6 +104,14 @@ figBridge.start({appName:   "MyAwesomeProject",
 
 Now we are ready to launch our ClojureScript application:
 
+In one terminal you will want to start figwheel running:
+
+```shell
+$ clj -m figwheel.main -b ios -r
+```
+
+And then start react native building in another terminal:
+
 ```shell
 $ react-native run-ios
 ```
