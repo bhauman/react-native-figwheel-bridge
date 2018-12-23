@@ -210,7 +210,7 @@ So a minimal `project.clj` would look like:
               [{:id "dev"
                 :source-paths ["src"]
                 :figwheel {:on-jsload "awesome.main/on-reload"}
-                :compiler {:main two-zero.core
+                :compiler {:main awesome.main
                            :target :nodejs
                            :output-dir "target/ios"
                            :output-to "target/ios/main.js"
