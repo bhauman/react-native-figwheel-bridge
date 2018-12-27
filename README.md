@@ -80,7 +80,7 @@ Create a `src/awesome/main.cljs` file in the `MyAwesomeProject` directory:
   (renderfn {}))
 ```
 
-Edit the `index.js` file in the `MyAwesomeProject` directory:
+Replace the contents of the `index.js` file in the `MyAwesomeProject` directory with:
 
 ```javascript
 // these requires allow you to use the (:require [react]) ns forms and 
