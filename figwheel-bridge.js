@@ -1,24 +1,13 @@
-/*
- * Originally taken from https://github.com/decker405/figwheel-react-native
- *
- * @providesModule figwheel-bridge
- */
-
-var debugEnabled = false;
-
 var React = require('react');
-var createReactClass = require('create-react-class');
 var ReactNative = require('react-native');
-var self;
-var evaluate = eval; // This is needed, direct calls to eval does not work (RN packager???)
-var externalModules = {};
-var evalListeners = {};
-var asyncImportChain = new Promise(function (succ,fail) {succ(true);});
+var createReactClass = require('create-react-class');
+var URI = require("uri-js");
+var cljsBootstrap = require("./clojurescript-bootstrap.js");
 
-function fireEvalListenters(url) {
-    Object.values(evalListeners).forEach(function (listener) {
-        listener(url)
-    });
+function cljsNamespaceToObject(ns) {
+    return ns.replace(/\-/, "_").split(/\./).reduce(function (base, arg) {
+	return (base ? base[arg] : base)
+    }, goog.global);
 }
 
 function listenForReload(cb) {
@@ -32,6 +21,7 @@ var figwheelApp = function (config) {
         getInitialState: function () {
             return {loaded: false}
         },
+	
         render: function () {
             if (!this.state.loaded) {
                 var plainStyle = {flex: 1, alignItems: 'center', justifyContent: 'center'};
@@ -46,18 +36,16 @@ var figwheelApp = function (config) {
 
         componentDidMount: function () {
             var app = this;
+	    var refresh = function(e) {
+		console.log("Refreshing Figwheel Root Element");
+		app.forceUpdate();
+	    }
             if (typeof goog === "undefined") {
                 loadApp(config, function (appRoot) {
-		    goog.figwheelBridgeRefresh = function () {
-			console.log("Refreshing Figwheel Root Element");
-			app.forceUpdate();
-		    };
+		    goog.figwheelBridgeRefresh = refresh;
                     app.setState({root: appRoot, loaded: true});
 		    if (config.autoRefresh) {
-			listenForReload(function (e) {
-			    console.log("Refreshing Figwheel Root Element");
-			    app.forceUpdate();
-			});
+			listenForReload(refresh);
 		    }
                 });
             }
@@ -65,107 +53,20 @@ var figwheelApp = function (config) {
     })
 };
 
-function logDebug(msg) {
-    if (debugEnabled) {
-        console.log(msg);
-    }
-}
-
-var isChrome = function () {
+function isChrome() {
     return typeof importScripts === "function"
-};
-
-function asyncImportScripts(url, transform, success, error) {
-    logDebug('(asyncImportScripts) Importing: ' + url);
-    asyncImportChain =
-        asyncImportChain
-            .then(function (v) {return fetch(url);})
-            .then(function (response) {
-                if(response.ok)
-                    return response.text();
-                throw new Error("Failed to Fetch: " + url + " - Perhaps your project was cleaned and you haven't recompiled?")
-            })
-            .then(function (responseText) {
-                evaluate(transform(responseText));
-                fireEvalListenters(url);
-                success();
-                return true;
-            })
-            .catch(function (e) {
-                console.error(e);
-                error();
-                return true;
-            });
 }
 
-function syncImportScripts(url, success, error) {
-    try {
-        importScripts(url);
-        logDebug('Evaluated: ' + url);
-        fireEvalListenters(url);
-        success();
-    } catch (e) {
-        console.error(e);
-        error()
+// this is an odd bit to support the chrome debugger which is almost always
+// local to the server
+// this is a double usage of the url, probably better to explicit in the config
+// to allow this behavior to be overriden
+function correctUrl(url) {
+    var u = URI.parse(url);
+    if(isChrome()) {
+	u.host = "localhost";
     }
-}
-
-// Loads js file sync if possible or async.
-function importJs(src, success, error) {
-    var noop = function(){};
-    var identity = function (arg){return arg};
-    var successCb = (typeof success == 'function') ? success : noop;
-    var errorCb = (typeof error   == 'function') ? error : noop;
-    logDebug('(importJs) Importing: ' + src);
-    if (isChrome()) {
-        syncImportScripts(src, successCb, errorCb);
-    } else {
-        asyncImportScripts(src, identity, successCb, errorCb);
-    }
-}
-
-function interceptRequire() {
-    var oldRequire = window.require;
-    console.info("Shimming require");
-    window.require = function (id) {
-        console.info("Requiring: " + id);
-        if (externalModules[id]) {
-            return externalModules[id];
-        }
-        return oldRequire(id);
-    };
-}
-
-function importIndexJs(outputToPath) {
-    var src = outputToPath;
-    var transformFn = function(code) {
-        var defines = code.match(new RegExp ("goog.global.CLOSURE_UNCOMPILED_DEFINES.*?;"));
-        var deps = code.match(/goog.require\(.*?\);/g).filter(x => !x.match(/cljs\.nodejscli/g));
-        var transformedCode = defines.concat(deps).join('');
-        logDebug('transformed index.js: ', transformedCode);
-        return transformedCode;
-    };
-    logDebug('(importIndexJs) Importing: ' + src);
-    asyncImportScripts(src, transformFn, function(){}, function(){});
-}
-
-function cljsNamespaceParts(ns) {
-    return ns.replace(/\-/, "_").split(/\./);
-}
-
-function cljsNamespaceToPath(ns) {
-    return cljsNamespaceParts(ns).join("/") + ".js";
-}
-
-function cljsNamespaceToObject(ns) {
-    return cljsNamespaceParts(ns).reduce(function (base, arg) {
-	return (base ? base[arg] : base)
-    }, goog.global);
-}
-
-function serverBaseUrl(config) {
-    var host = (isChrome() ? "localhost" : config.devHost);
-    return "http://" + host + ":" + config.serverPort;
+    return URI.serialize(u);
 }
 
 function assert(predVal, message) {
@@ -175,35 +76,24 @@ function assert(predVal, message) {
 }
 
 function loadApp(config, onLoadCb) {
-    var fileBasePath = serverBaseUrl(config) + "/" + config.outputDir;
-    var outputToPath = serverBaseUrl(config) + "/" + config.outputTo;
-    var mainJs = cljsNamespaceToPath(config.mainNs);
-
-    // callback when app is ready to get the reloadable component
-    evalListeners.waitForFinalEval = function (url) {
-        if (url.indexOf(mainJs) > -1) {
-	    var mainNsObject = cljsNamespaceToObject(config.mainNs);
-	    assert(mainNsObject, "ClojureScript Namespace " + config.mainNs + " not found.");
-	    assert(mainNsObject[config.renderFn], "Render function " + config.renderFn + " not found.");
-            onLoadCb(mainNsObject[config.renderFn]);
-            console.info('Done loading Clojure app');
-            delete evalListeners.waitForFinalEval;
-        }
-    };
-
-    if (typeof goog === "undefined") {
-        console.info('Loading Closure base.');
-        interceptRequire();
-
-        // need to know base path here
-        importJs(fileBasePath + '/goog/base.js', function () {
-            shimBaseGoog(fileBasePath, config.googBasePath);
-            importJs(fileBasePath + '/cljs_deps.js', function () {
-                importJs(fileBasePath + '/goog/deps.js', function () {
-                    importIndexJs(outputToPath);
-                });
-            });
-        });
+    var confProm;
+    if(config.optionsUrl) {
+	confProm = cljsBootstrap.fetchConfig(correctUrl(config.optionsUrl)).then(function (conf) {
+	    return Object.assign(conf, config);
+	}).catch(function(err){
+	    console.error("Unable to fetch optionsUrl " + config.optionsUrl);
+	});
+    } else {
+	confProm = Promise.resolve(config);
+    }
+    if(confProm) {
+	confProm.then(cljsBootstrap.bootstrap)
+	    .then(function (conf) {
+		var mainNsObject = cljsNamespaceToObject(conf.main);
+		assert(mainNsObject, "ClojureScript Namespace " + conf.main + " not found.");
+		assert(mainNsObject[config.renderFn], "Render function " + config.renderFn + " not found.");
+		onLoadCb(mainNsObject[config.renderFn]);
+	    });
     }
 }
 
@@ -212,55 +102,55 @@ function assertKeyType(obj, k, type) {
 }
 
 function validateOptions(options) {
-    assertKeyType(options, "googBasePath", "string");
-    assertKeyType(options, "serverPort",   "number");
-    assertKeyType(options, "appName",      "string");
-    assertKeyType(options, "outputDir",    "string");
-    assertKeyType(options, "outputTo",     "string");
-    assertKeyType(options, "mainNs",       "string");
-    assertKeyType(options, "autoRefresh",  "boolean");
-    assertKeyType(options, "devHost",      "string");
-    assertKeyType(options, "renderFn",     "string");    
+    assert(options.appName, "must provide an appName");
+    assertKeyType(options, "appName",        "string");
+    assertKeyType(options, "autoRefresh",    "boolean");
+    assertKeyType(options, "renderFn",       "string");
+    if(options.optionsUrl) {
+	assertKeyType(options, "optionsUrl", "string");
+    } else {
+	assert(options["asset-path"], "must provide an asset-path option when no cljscOptionsUrl is provided");
+	assert(options["main"],       "must provide a main option when no cljscOptionsUrl is provided");
+	assertKeyType(options, "asset-path",      "string");
+	assertKeyType(options, "main",            "string");	
+	if(options.preloads) {
+	    assertKeyType(options, "preloads",        "string");
+	}
+	if(options["closure-defines"]) {
+	    assertKeyType(options, "closure-defines", "string");
+	}
+    }
 }
 
-function startApp(options){
-    var config = Object.assign({googBasePath: 'goog/',
-				serverPort:   8081,
-				devHost:      'localhost',
-				renderFn:     'figwheel_rn_root',
-			        autoRefresh:  true},
-			       options);
-    validateOptions(config);
-    ReactNative.AppRegistry.registerComponent(
-        config.appName, () => figwheelApp(config));
-}
-
-function withModules(moduleById) {
-    externalModules = moduleById;
-    return self;
-}
-
-function figwheelImportScript(uri, callback) {
-    importJs(uri.toString(),
-        function () {callback(true);},
-        function () {callback(false);})
-}
-
-// Goog fixes
-function shimBaseGoog(basePath, googBasePath) {
-    console.info('Shimming goog functions.');
-    goog.basePath = basePath + '/' + googBasePath;
-    goog.global.FIGWHEEL_IMPORT_SCRIPT = figwheelImportScript;
-    goog.writeScriptSrcNode = importJs;
-    goog.writeScriptTag_ = function (src, optSourceText) {
-        importJs(src);
-        return true;
+// helper function to allow require at runtime
+function shimRequire(requireMap) {
+    // window get's compiled to the global object under React Native compile options
+    var oldRequire = window.require;
+    window.require = function (id) {
+        console.info("Requiring: " + id);
+        if (requireMap[id]) {
+            return requireMap[id];
+        }
+	if(oldRequire) {
+            return oldRequire(id);
+	}
     };
 }
 
-self = {
-    withModules: withModules,
+function startApp(options){
+    var config = Object.assign({renderFn:     'figwheel_rn_root',
+			        autoRefresh:  true},
+			       options);
+    validateOptions(config);
+    // The crux of the loading problem for React Native is that the code needs to be loaded synchronously
+    // because the way that React Native launches an application. It looks for the registered application to launch
+    // after the initial loading of the jsbundle. Since we are accumstomed to use asynchronous loading to load
+    // the optimizations none files and setup its useful to establish this fetching as a channel for future reloading.
+    // We could compile the files to load into an initial single bundle to be loaded. 
+    ReactNative.AppRegistry.registerComponent(
+	config.appName, () => figwheelApp(config));
+}
+
+module.exports = {
     start: startApp
 };
-
-module.exports = self;
