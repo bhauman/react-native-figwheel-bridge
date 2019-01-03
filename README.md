@@ -155,7 +155,7 @@ Now we'll start setting up a basic
 Create a `deps.edn` file in the `MyAwesomeProject` directory:
 
 ```clojure
-{:deps {org.clojure/clojurescript {:mvn/version "1.10.339"}
+{:deps {org.clojure/clojurescript {:mvn/version "1.10.439"}
         com.bhauman/figwheel-main {:mvn/version "0.2.1-SNAPSHOT"}}}
 ```
 
