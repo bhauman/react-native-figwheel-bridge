@@ -5,6 +5,9 @@ Figwheel's live reloading and REPL.
 
 ## State of this library
 
+> This library is intended to only replace the functionality
+> provided by the `figwheel-bridge.js` file in re-natal
+
 This library is going to change. I'm using it as a base to understand
 the issues when integrating ClojureScript tooling with React Native
 tooling.
@@ -24,7 +27,7 @@ period of discovery.
 I do advise that you use this library as it represents a very
 straightforward way to use React Native along with Figwheel.
 
-## Usage
+## Initial setup
 
 First you will need to make sure you have React Native and its
 dependencies installed.
@@ -137,7 +140,7 @@ along with this explanation it will eliminate all the mystery and
 empower you to make your own decisions about how you want to load and
 run your ClojureScript application.
 
-# Usage
+## Integrating the ClojureScript and Figwheel 
 
 First we need to add the `react-native-figwheel-bridge` to our npm
 dependencies:
