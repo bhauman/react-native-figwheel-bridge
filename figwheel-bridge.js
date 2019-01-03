@@ -152,5 +152,6 @@ function startApp(options){
 }
 
 module.exports = {
+    shimRequire: shimRequire,
     start: startApp
 };

@@ -17,11 +17,11 @@ first place and be able to support React Native directly from
 figwheel-main or even the ClojureScript compiler.
 
 Because of this flux, this library is going to primarily be compatible
-with figwheel-main for now as I'm not going to be make incremental
+with `figwheel-main` for now as I'm not going to be make incremental
 improvements to both `figwheel-main` and `lein figwheel` during this
 period of discovery.
 
-I do advise you to use this library as it represents a very
+I do advise that you use this library as it represents a very
 straightforward way to use React Native along with Figwheel.
 
 ## Usage
@@ -53,31 +53,31 @@ $ react-native run-ios  # or react-native run-android
 ```
 
 If everything is set up correctly this should launch a phone simulator
-with the native application defined in `index.js` and `App.js`.
+with the RN application defined in `index.js` and `App.js`.
 
 If you have any problems please consult the React Native
-documentation. Actually I really recommend reading all of the React
-Native Documentation as it is very well written and will more than
-likely save you lots of headaches.
+documentation. Actually, I really recommend reading all of the React
+Native Documentation as it is well written and will more than likely
+save you lots of headaches.
 
 If everything is up and running go ahead an close everything so that
-we can setup a ClojureScript application that uses figwheel-main to
+we can setup a ClojureScript application that uses `figwheel-main` to
 support hot reloading and a REPL.
 
 ## Notes on the React Native build environment
 
 When you run `react-native run-ios` it launches the metro bundler
-which basically runs `babel` based watcher/compiler process with some
-specific React Native presets on the `index.js` file. This compiles
-the `index.js` file to a bundle that is loaded by React Native frame
-code that is written in Objective-C.
+which basically runs a `babel` based watcher/compiler process with
+some specific React Native presets on the `index.js` file. This
+compiles the `index.js` file to a bundle that is loaded by React
+Native framework code that is written in Objective-C.
 
 You can see the Native code that loads the bundle in
 `ios/MyAwesomeProject/AppDelegate.m`.
 
-The main point here is that in terms of relating to ClojureScript and
-its tools, a React Native project is simply JavaScript that gets
-loaded into a React Native host environment.
+> The important thing to note about this, is that in terms of relating
+> to ClojureScript and its tools, a React Native project is simply
+> JavaScript that gets loaded into a React Native host environment.
 
 Our goal is to get our compiled ClojureScript into the RN host
 environment and establish a REPL connection so that we can get
@@ -89,9 +89,9 @@ and that's where this library comes in.
 One of the tricky parts is the use of `require`. `require` is not just
 used to include JavaScript libraries in React Native projects it's
 also used to pull in assets like images, data etc. However unlike
-node-js `require` doesn't actually exist in the JavaScript Core runtime
-environment. The React Native metro bundler process resolves and handles
-all `require`s in JavaScript code at compile time.
+node-js `require` doesn't actually exist in the JavaScript Core
+runtime environment. The React Native metro bundler process resolves
+and handles all `require`s in JavaScript code at compile time.
 
 However, this doesn't work for hot-reloaded compiled ClojureScript
 code which doesn't get processed by the Metro bundler. So `(js/require
@@ -113,12 +113,9 @@ ClojureScript ns forms like this:
 
 So there will need to be an intervention for this as well.
 
-After, taking a good look at this and the current capabilities of the
-compiler I came up with the following compromise.
-
 We need to make `require`s available in a global object in the
-`index.js` so that they are available to ClojureScript at runtime and we
-need to inform the ClojureScript compiler which namespaces are to
+`index.js` so that they are available to ClojureScript at runtime and
+we need to inform the ClojureScript compiler which namespaces are to
 supplied by this global map so that it can bind them properly in the
 `ns` forms.
 
@@ -134,12 +131,11 @@ asynchronously. So we have to register a proxy component before the
 application code loads. This proxy in turn renders your actual
 application when the application code actually loads.
 
-So these three problems are addresses by the
-`react-native-figwheel-bridge` code. I encourage you to read it and
-understand it as it along with this explanation will eliminate all the
-mystery and empower you to make your own decisions about how you want
-to load and run your ClojureScript application.
-
+So these problems are addresses by the `react-native-figwheel-bridge`
+code. I encourage you to read it and understand it. I beleive that
+along with this explanation it will eliminate all the mystery and
+empower you to make your own decisions about how you want to load and
+run your ClojureScript application.
 
 # Usage
 
@@ -168,7 +164,12 @@ Create a `ios.cljs.edn` file in the `MyAwesomeProject` directory:
 {:main awesome.main}
 ```
 
-Make an empty `./dummy.js` file so that we can infer global exports:
+> If you have done React Native from ClojureScript before, then you
+> will notice that I am not specifying a `:target :nodejs` in the
+> compile options. This is intentional because we are not actually
+> targeting Nodejs.
+
+Make an empty `./dummy.js` file so that we can use `:global-exports`:
 
 ```shell
 $ touch ./dummy.js
@@ -238,6 +239,45 @@ refreshing the application for you when figwheel reloads code.
 You can see this behavior by editing the `src/awesome/main.cljs`
 file. Try changing the `"HELLO"` to `"HELLO THERE"`. You should see
 the application change when you save `src/awesome/main.cljs`.
+
+## Further explaination
+
+The magic line above is in the `ios.cljs.edn` file.
+
+```
+:npm {:bundles {"dummy.js" "index.js"}}
+```
+
+This line causes figwheel-main to read the `cljsExports` statements
+`index.js` file and adds the following to your compile options (The
+specific `cljsExports` name is parsed by figwheel):
+
+```
+{:main awesome.main
+ :foreign-libs [{:file "dummy.js"
+                 :provides ["react" "react-native" "create-react-class"]
+				 :global-exports {react              cljsExports.react
+				                  react-native       cljsExports.react-native
+								  create-react-class cljsExports.create-react-class}}]}
+```
+
+The `:global-exports` config option allows us to reference these
+exports via the `:requires` in our `ns` forms.
+
+```clojure
+(ns awesome.main
+  (:require [react-native :as rn]))
+  
+;; global exports allows us to refer to ReactNative.Text like this
+(rn/Text #js {:style ...} "Hello world")
+```
+
+The `:global-exports` that we need are already provided by top level
+bundle compiled by Metro. We pretend that the empty `dummy.js` file is
+providing them so we can utilize the Global Exports feature. Hopefully
+the ClojureScript compiler will add top-level `:global-exports` option
+to the compiler options so that this hack isn't necessary in the
+future.
 
 ## Configuration options
 
@@ -318,38 +358,6 @@ in `src/awesome/main.cljs` this looks like:
 
 ;; adding the reload hook here
 (defn ^:after-load on-reload [] (goog/figwheelBridgeRefresh))
-```
-
-## Usage `lein figwheel` and `figwheel.sidecar`
-
-It's very similar to the above except you have to refresh manually as
-described in the last section.
-
-So a minimal `project.clj` would look like:
-
-```clojure
-(defproject awesome "0.1.0-SNAPSHOT"
-  :dependencies [[org.clojure/clojure "1.9.0"]
-                 [org.clojure/clojurescript "1.10.339"]]
-
-  :plugins [[lein-figwheel "0.5.16"]]
-
-  :cljsbuild {:builds
-              [{:id "dev"
-                :source-paths ["src"]
-                :figwheel {:on-jsload "awesome.main/on-reload"}
-                :compiler {:main two-zero.core
-                           :target :nodejs
-                           :output-dir "target/ios"
-                           :output-to "target/ios/main.js"
-                           }}]})
-```
-
-and your `src/awesome/main.cljs` file would need to define an
-`on-reload` function that calls `(goog/figwheelBridgeRefresh)` like so:
-
-```clojure
-(defn on-reload [] (goog/figwheelBridgeRefresh))
 ```
 
 ## Based on previous work
