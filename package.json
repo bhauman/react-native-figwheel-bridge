@@ -1,22 +1,22 @@
 {
-    "name": "react-native-figwheel-bridge",
-    "version": "1.0.3",
-    "description": "Enables ReactNative projects written in ClojureScript to use Figwheel Main's live reloading and REPL.",
-    "homepage": "https://github.com/bhauman/react-native-figwheel-bridge",
-    "author": "Bruce Hauman <bhauman@gmail.com> (https://rigsomelight.com)",
-    "license": "ISC",    
-    "main": "index.js",
-    "repository": {
-	"type": "git",
-	"url": "https://github.com/bhauman/react-native-figwheel-bridge.git"
-    },
-    "scripts": {
-	"build": "babel ./figwheel-bridge.js > index.js"
-    },
-    "devDependencies": {
-	"@babel/cli": "^7.0.0",
-	"@babel/core": "^7.0.0",
-	"metro-react-native-babel-preset": "^0.48.5"
-    },
-    "dependencies": {}
+   "name": "react-native-figwheel-bridge",
+   "version": "1.0.5",
+   "description": "Enables ReactNative projects written in ClojureScript to use Figwheel Main's live reloading and REPL.",
+   "homepage": "https://github.com/bhauman/react-native-figwheel-bridge",
+   "author": "Bruce Hauman <bhauman@gmail.com> (https://rigsomelight.com)",
+   "license": "ISC",
+   "main": "index.js",
+   "repository": {
+      "type": "git",
+      "url": "https://github.com/bhauman/react-native-figwheel-bridge.git"
+   },
+   "scripts": {
+      "build": "babel ./figwheel-bridge.js > index.js"
+   },
+   "devDependencies": {
+      "@babel/cli": "^7.0.0",
+      "@babel/core": "^7.0.0",
+      "metro-react-native-babel-preset": "^0.48.5"
+   },
+   "dependencies": {}
 }
