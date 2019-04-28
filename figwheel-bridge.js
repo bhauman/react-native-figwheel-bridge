@@ -3,6 +3,7 @@ var ReactNative = require('react-native');
 var createReactClass = require('create-react-class');
 var URI = require("uri-js");
 var cljsBootstrap = require("./clojurescript-bootstrap.js");
+var expo = require('expo');
 
 function cljsNamespaceToObject(ns) {
     return ns.replace(/\-/, "_").split(/\./).reduce(function (base, arg) {
@@ -105,6 +106,7 @@ function validateOptions(options) {
     assert(options.appName, "must provide an appName");
     assertKeyType(options, "appName",        "string");
     assertKeyType(options, "autoRefresh",    "boolean");
+    assertKeyType(options, "expo",           "boolean");
     assertKeyType(options, "renderFn",       "string");
     if(options.optionsUrl) {
 	assertKeyType(options, "optionsUrl", "string");
@@ -112,7 +114,7 @@ function validateOptions(options) {
 	assert(options["asset-path"], "must provide an asset-path option when no cljscOptionsUrl is provided");
 	assert(options["main"],       "must provide a main option when no cljscOptionsUrl is provided");
 	assertKeyType(options, "asset-path",      "string");
-	assertKeyType(options, "main",            "string");	
+	assertKeyType(options, "main",            "string");
 	if(options.preloads) {
 	    assertKeyType(options, "preloads",        "string");
 	}
@@ -146,9 +148,13 @@ function startApp(options){
     // because the way that React Native launches an application. It looks for the registered application to launch
     // after the initial loading of the jsbundle. Since we are accumstomed to use asynchronous loading to load
     // the optimizations none files and setup its useful to establish this fetching as a channel for future reloading.
-    // We could compile the files to load into an initial single bundle to be loaded. 
-    ReactNative.AppRegistry.registerComponent(
-	config.appName, () => figwheelApp(config));
+    // We could compile the files to load into an initial single bundle to be loaded.
+    if ( config.expo === true && expo !== undefined) {
+        expo.registerRootComponent(figwheelApp(config));
+    } else {
+        ReactNative.AppRegistry.registerComponent(
+            config.appName, () => figwheelApp(config));
+    }
 }
 
 module.exports = {
