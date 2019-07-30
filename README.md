@@ -135,7 +135,7 @@ application code loads. This proxy in turn renders your actual
 application when the application code actually loads.
 
 So these problems are addresses by the `react-native-figwheel-bridge`
-code. I encourage you to read it and understand it. I beleive that
+code. I encourage you to read it and understand it. I believe that
 along with this explanation it will eliminate all the mystery and
 empower you to make your own decisions about how you want to load and
 run your ClojureScript application.
