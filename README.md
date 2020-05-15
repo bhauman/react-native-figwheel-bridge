@@ -207,6 +207,8 @@ Create a `src/awesome/main.cljs` file in the `MyAwesomeProject` directory:
 Edit the `index.js` file in the `MyAwesomeProject` directory:
 
 ```javascript
+window.CLOSURE_NO_DEPS = true;
+
 cljsExports = {};
 cljsExports["react"] = require('react');
 cljsExports["react-native"] = require('react-native');
