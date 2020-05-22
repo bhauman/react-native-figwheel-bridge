@@ -1,3 +1,12 @@
 node_modules
 \.\#*
 yarn.lock
+target/
+package-lock.json
+.cpcache/
+deps.edn
+dev.cljs.edn
+ex-src/
+resources/
+.github/
+.babelrc
