@@ -45,6 +45,7 @@ function bootstrap(config) {
 	}
 	return true;
     }
+    window.CLOSURE_NO_DEPS = true;
     return config.loadFn(config["asset-path"] + "/goog/base.js")
 	.then(function (d) {
 	    goog.basePath = config["asset-path"] + "/goog/";
@@ -52,7 +53,7 @@ function bootstrap(config) {
 		goog.global.CLOSURE_UNCOMPILED_DEFINES = config["closure-defines"];
 	    }
 	    goog.global.CLOSURE_IMPORT_SCRIPT = config.closureImportScript;
-
+	    
 	    // it makes sense to set this up here given as its a no-op without
 	    // figwheel and is easily overriden
 	    goog.global.FIGWHEEL_IMPORT_SCRIPT = function(uri, callback) {

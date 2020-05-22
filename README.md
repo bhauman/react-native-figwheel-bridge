@@ -259,9 +259,9 @@ specific `cljsExports` name is parsed by figwheel):
 {:main awesome.main
  :foreign-libs [{:file "dummy.js"
                  :provides ["react" "react-native" "create-react-class"]
-				 :global-exports {react              cljsExports.react
-				                  react-native       cljsExports.react-native
-								  create-react-class cljsExports.create-react-class}}]}
+                 :global-exports {react              cljsExports.react
+                                  react-native       cljsExports.react-native
+                                  create-react-class cljsExports.create-react-class}}]}
 ```
 
 The `:global-exports` config option allows us to reference these
