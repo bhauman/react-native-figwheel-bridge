@@ -4,6 +4,43 @@ var createReactClass = require('create-react-class');
 var URI = require("uri-js");
 var cljsBootstrap = require("./clojurescript-bootstrap.js");
 
+function assert(predVal, message) {
+    if(!predVal) {
+	throw new Error(message);
+    }
+}
+
+function assertKeyType(obj, k, type) {
+    assert(typeof obj[k] == type, k + " must be a " + type);
+}
+
+function validateOptions(options) {
+    assertKeyType(options, "autoRefresh",    "boolean");
+    assertKeyType(options, "renderFn",       "string");
+    if(options.optionsUrl) {
+	assertKeyType(options, "optionsUrl", "string");
+    } else {
+	assert(options["asset-path"], "must provide an asset-path option when no cljscOptionsUrl is provided");
+	assert(options["main"],       "must provide a main option when no cljscOptionsUrl is provided");
+	assertKeyType(options, "asset-path",      "string");
+	assertKeyType(options, "main",            "string");
+	if(options.preloads) {
+	    assertKeyType(options, "preloads",        "string");
+	}
+	if(options["closure-defines"]) {
+	    assertKeyType(options, "closure-defines", "string");
+	}
+    }
+}
+
+function provideDefaultsAndValidateConfig(options){
+    var config = Object.assign({renderFn: 'figwheel_rn_root',
+				autoRefresh:  true},
+			       options);
+    validateOptions(config);
+    return config;
+}
+
 function cljsNamespaceToObject(ns) {
     return ns.replace(/\-/, "_").split(/\./).reduce(function (base, arg) {
 	return (base ? base[arg] : base)
@@ -16,7 +53,8 @@ function listenForReload(cb) {
     }
 }
 
-var figwheelApp = function (config) {
+var createBridgeComponent = function (config) {
+    var config = provideDefaultsAndValidateConfig(config);
     return createReactClass({
         getInitialState: function () {
             return {loaded: false}
@@ -69,11 +107,7 @@ function correctUrl(url) {
     return URI.serialize(u);
 }
 
-function assert(predVal, message) {
-    if(!predVal) {
-	throw new Error(message);
-    }
-}
+
 
 function loadApp(config, onLoadCb) {
     var confProm;
@@ -97,30 +131,6 @@ function loadApp(config, onLoadCb) {
     }
 }
 
-function assertKeyType(obj, k, type) {
-    assert(typeof obj[k] == type, k + " must be a " + type);
-}
-
-function validateOptions(options) {
-    assert(options.appName, "must provide an appName");
-    assertKeyType(options, "appName",        "string");
-    assertKeyType(options, "autoRefresh",    "boolean");
-    assertKeyType(options, "renderFn",       "string");
-    if(options.optionsUrl) {
-	assertKeyType(options, "optionsUrl", "string");
-    } else {
-	assert(options["asset-path"], "must provide an asset-path option when no cljscOptionsUrl is provided");
-	assert(options["main"],       "must provide a main option when no cljscOptionsUrl is provided");
-	assertKeyType(options, "asset-path",      "string");
-	assertKeyType(options, "main",            "string");	
-	if(options.preloads) {
-	    assertKeyType(options, "preloads",        "string");
-	}
-	if(options["closure-defines"]) {
-	    assertKeyType(options, "closure-defines", "string");
-	}
-    }
-}
 
 // helper function to allow require at runtime
 function shimRequire(requireMap) {
@@ -137,21 +147,22 @@ function shimRequire(requireMap) {
     };
 }
 
+// deprecated
+// this will not work when you use react native expo
+// use createBridgeComponent instead
 function startApp(options){
-    var config = Object.assign({renderFn:     'figwheel_rn_root',
-			        autoRefresh:  true},
-			       options);
-    validateOptions(config);
+    assert(options.appName, "must provide an appName");
+    assertKeyType(options, "appName", "string");
     // The crux of the loading problem for React Native is that the code needs to be loaded synchronously
     // because the way that React Native launches an application. It looks for the registered application to launch
     // after the initial loading of the jsbundle. Since we are accumstomed to use asynchronous loading to load
     // the optimizations none files and setup its useful to establish this fetching as a channel for future reloading.
-    // We could compile the files to load into an initial single bundle to be loaded. 
-    ReactNative.AppRegistry.registerComponent(
-	config.appName, () => figwheelApp(config));
+    // We could compile the files to load into an initial single bundle to be loaded.
+    ReactNative.AppRegistry.registerComponent(options.appName, () => createBridgeComponent(options));
 }
 
 module.exports = {
     shimRequire: shimRequire,
-    start: startApp
+    start: startApp,
+    createBridgeComponent: createBridgeComponent
 };
