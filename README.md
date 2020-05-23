@@ -27,53 +27,13 @@ period of discovery.
 I do advise that you use this library as it represents a very
 straightforward way to use React Native along with Figwheel.
 
-## Initial setup
-
-First you will need to make sure you have React Native and its
-dependencies installed.
-
-On the https://facebook.github.io/react-native/docs/getting-started
-page you will want to click the poorly named `Building Projects with
-Native Code` tab, to get instructions on how to set your system up.
-
-Once things are installed you can then follow the instructions below
-to get a React Native project setup for Figwheel development.
-
-Initialize a project:
-
-```shell
-$ react-native init MyAwesomeProject
-```
-
-This will create an initial React Native project. Before you go any
-further you will want to ensure that everything is setup so that you can
-launch and run your application in a simulator.
-
-Change in into the `MyAwesomeProject` directory and launch a simulator like so:
-
-```shell
-$ react-native run-ios  # or react-native run-android
-```
-
-If everything is set up correctly this should launch a phone simulator
-with the RN application defined in `index.js` and `App.js`.
-
-If you have any problems please consult the React Native
-documentation. Actually, I really recommend reading all of the React
-Native Documentation as it is well written and will more than likely
-save you lots of headaches.
-
-If everything is up and running go ahead an close everything so that
-we can setup a ClojureScript application that uses `figwheel-main` to
-support hot reloading and a REPL.
-
 ## Notes on the React Native build environment
 
-When you run `react-native run-ios` it launches the metro bundler
+When you run `npx react-native run-ios` it launches the metro bundler
 which basically runs a `babel` based watcher/compiler process with
-some specific React Native presets on the `index.js` file. This
-compiles the `index.js` file to a bundle that is loaded by React
-Native framework code that is written in Objective-C.
+some specific React Native presets. This compiles the `index.js` file
+to a bundle that is loaded by React Native framework code that is
+written in Objective-C.
 
 You can see the Native code that loads the bundle in
 `ios/MyAwesomeProject/AppDelegate.m`.
@@ -117,10 +77,21 @@ ClojureScript ns forms like this:
 So there will need to be an intervention for this as well.
 
 We need to make `require`s available in a global object in the
-`index.js` so that they are available to ClojureScript at runtime and
-we need to inform the ClojureScript compiler which namespaces are to
-supplied by this global map so that it can bind them properly in the
-`ns` forms.
+`index.js` so that they are available to ClojureScript at
+runtime. ClojureScript helps us here with it's new `:bundle`
+target. When using the `:bundle` target the CLJS compiler collects all
+these npm dependency requires and generates an `npm_deps.js` file which
+can be processed by the metro bundler.
+
+The content of the `npm_deps.js` file typically looks like this: 
+
+```
+module.exports = {
+  npmDeps: {
+    "react-native": require('react-native'),
+    "react": require('react')  }
+};
+```
 
 Finally, there is one more sticking point when integrating an
 optimizations `:none` ClojureScript build into a React Native tooling
@@ -128,17 +99,86 @@ environment.
 
 When React Native loads the Metro Compiled bundle it expects the root
 of the React Native component to be registered synchronously when the
-bundle initially loads. Unfortunately right now it is simplest to
+bundle initially loads. Unfortunately right now it is faster and simpler to
 bootstrap and load the ClojureScript application code
 asynchronously. So we have to register a proxy component before the
 application code loads. This proxy in turn renders your actual
 application when the application code actually loads.
 
-So these problems are addresses by the `react-native-figwheel-bridge`
-code. I encourage you to read it and understand it. I beleive that
-along with this explanation it will eliminate all the mystery and
-empower you to make your own decisions about how you want to load and
-run your ClojureScript application.
+This `react-native-figwheel-bridge` library addresses these problems
+and I encourage you to read it and understand it. Reading the code
+should eliminate much of the mystery and empower you to make your own
+decisions about how you want to load and run your ClojureScript
+application.
+
+## Initial setup
+
+First you will need to make sure you have React Native and its
+dependencies installed.
+
+On the https://reactnative.dev/docs/environment-setup page you will
+want to choose either the `React Native CLI` or the `Expo CLI`.  I
+prefer to start with the React Native CLI as there is less tooling to
+deal with so its easier to figure out what is going on when you use
+it.
+
+Install your CLI of choice according to the instructions on that page.
+
+Once things are installed you can then follow the instructions below
+to get an ClojureScript project setup for Figwheel development.
+
+## React Native CLI
+
+Initialize a project:
+
+```shell
+$ npx react-native init MyAwesomeProject
+```
+
+This will create an initial React Native project. Before you go any
+further you will want to ensure that everything is setup so that you can
+launch and run your application in a simulator.
+
+Change in into the `MyAwesomeProject` directory and launch a simulator like so:
+
+```shell
+$ npx react-native run-ios  # or react-native run-android
+```
+
+If everything is set up correctly this should launch a phone simulator
+with the RN application defined in `index.js` and `App.js`.
+
+## Expo CLI
+
+Initialize a project:
+
+```shell
+$ npx expo init MyAwesomeProject
+```
+
+This will create an initial React Native project. Before you go any
+further you will want to ensure that everything is setup so that you can
+launch and run your application in a simulator.
+
+Change in into the `MyAwesomeProject` directory and launch a simulator like so:
+
+```shell
+$ yarn ios # or android
+```
+
+If everything is set up correctly this should launch a phone simulator
+with the RN application defined in `App.js`.
+
+## Troubleshooting
+
+If you have any problems with setting up an application please consult
+the React Native documentation. I really recommend reading all of the
+React Native Documentation as it is well written and will more than
+likely save you lots of headaches.
+
+If everything is up and running go ahead an close everything so that
+we can setup a ClojureScript application that uses `figwheel-main` to
+support hot reloading and a REPL.
 
 ## Integrating the ClojureScript and Figwheel 
 
@@ -155,27 +195,17 @@ Now we'll start setting up a basic
 Create a `deps.edn` file in the `MyAwesomeProject` directory:
 
 ```clojure
-{:deps {org.clojure/clojurescript {:mvn/version "1.10.439"}
-        com.bhauman/figwheel-main {:mvn/version "0.2.1-SNAPSHOT"}}}
+{:deps {org.clojure/clojurescript {:mvn/version "1.10.764"}
+        com.bhauman/figwheel-main {:mvn/version "0.2.5"}}}
 ```
 
 Create a `ios.cljs.edn` file in the `MyAwesomeProject` directory:
 
 ```clojure
 ^{:open-url false
-  :npm {:bundles {"dummy.js" "index.js"}}}
-{:main awesome.main}
-```
-
-> If you have done React Native from ClojureScript before, then you
-> will notice that I am not specifying a `:target :nodejs` in the
-> compile options. This is intentional because we are not actually
-> targeting Nodejs.
-
-Make an empty `./dummy.js` file so that we can use `:global-exports`:
-
-```shell
-$ touch ./dummy.js
+  :cljs-devtools false}
+{:main awesome.main
+ :target :bundle}
 ```
 
 Create a `src/awesome/main.cljs` file in the `MyAwesomeProject` directory:
@@ -204,22 +234,33 @@ Create a `src/awesome/main.cljs` file in the `MyAwesomeProject` directory:
   (renderfn {}))
 ```
 
+Next we need to create the index file to start our Clojurescript
+application this file will be different depending on which CLI tool we
+are using.
+
+The index file is the file that will be bundled by React Native
+tooling.
+
+## React Native CLI Index.js
+
 Edit the `index.js` file in the `MyAwesomeProject` directory:
 
 ```javascript
-window.CLOSURE_NO_DEPS = true;
+import {AppRegistry} from 'react-native';
+import {name as appName} from './app.json';
+import {npmDeps} from "./target/public/cljs-out/ios/npm_deps.js";
 
-cljsExports = {};
-cljsExports["react"] = require('react');
-cljsExports["react-native"] = require('react-native');
-cljsExports["create-react-class"] = require('create-react-class');
+// you can add other items to npmDeps here
+// npmDeps["./assets/logo.png"]= require("./assets/logo.png");
+
+// this url points to a file generated by the cljs compiler in the output-dir of your app
+var options = {optionsUrl: "http://localhost:19001/target/public/cljs-out/ios/cljsc_opts.json"};
 
 var figBridge = require("react-native-figwheel-bridge");
-
-figBridge.shimRequire(cljsExports);
-figBridge.start({appName:   "MyAwesomeProject",
-                 optionsUrl: "http://localhost:8081/target/public/cljs-out/ios/cljsc_opts.json"});
-```				 
+figBridge.shimRequire(npmDeps);
+AppRegistry.registerComponent(appName,
+                              () => figBridge.createBridgeComponent(options));
+```
 
 Now we are ready to launch our ClojureScript application:
 
@@ -233,9 +274,8 @@ $ clj -m figwheel.main -b ios -r
 The in another terminal window change into the `MyAwesomeProject`
 directory and start `react-native` 
 
-
 ```shell
-$ react-native run-ios
+$ npx react-native run-ios
 ```
 
 When using `figwheel-main` figwheel bridge will take care of auto
@@ -245,55 +285,60 @@ You can see this behavior by editing the `src/awesome/main.cljs`
 file. Try changing the `"HELLO"` to `"HELLO THERE"`. You should see
 the application change when you save `src/awesome/main.cljs`.
 
-## Further explaination
+## Expo CLI Index.js
 
-The magic line above is in the `ios.cljs.edn` file.
+Create an `index.js` file in the `MyAwesomeProject` directory:
 
-```
-:npm {:bundles {"dummy.js" "index.js"}}
-```
+```javascript
+import { registerRootComponent } from 'expo';
+import {npmDeps} from "./target/public/cljs-out/ios/npm_deps.js";
 
-This line causes figwheel-main to read the `cljsExports` statements
-`index.js` file and adds the following to your compile options (The
-specific `cljsExports` name is parsed by figwheel):
+var options = {optionsUrl: "http://localhost:19001/target/public/cljs-out/ios/cljsc_opts.json"};
 
-```
-{:main awesome.main
- :foreign-libs [{:file "dummy.js"
-                 :provides ["react" "react-native" "create-react-class"]
-                 :global-exports {react              cljsExports.react
-                                  react-native       cljsExports.react-native
-                                  create-react-class cljsExports.create-react-class}}]}
+var figBridge = require("react-native-figwheel-bridge");
+figBridge.shimRequire(npmDeps);
+registerRootComponent(figBridge.createBridgeComponent(options));
 ```
 
-The `:global-exports` config option allows us to reference these
-exports via the `:requires` in our `ns` forms.
+Now we have to **expo** that we want to use this `index.js` as the
+entry point to our application.
 
-```clojure
-(ns awesome.main
-  (:require [react-native :as rn]))
-  
-;; global exports allows us to refer to ReactNative.Text like this
-(rn/Text #js {:style ...} "Hello world")
+Edit `package.json` and change `"main": "node_modules/expo/AppEntry.js"` to
+`"main": "index.js"`.
+
+Now we are ready to launch our ClojureScript application:
+
+First we will start the `figwheel-main` process to watch and compile
+and create a Websocket for REPL communication.
+
+```shell
+$ clj -m figwheel.main -b ios -r
 ```
 
-The `:global-exports` that we need are already provided by top level
-bundle compiled by Metro. We pretend that the empty `dummy.js` file is
-providing them so we can utilize the Global Exports feature. Hopefully
-the ClojureScript compiler will add top-level `:global-exports` option
-to the compiler options so that this hack isn't necessary in the
-future.
+The in another terminal window change into the `MyAwesomeProject`
+directory and start `expo` 
+
+```shell
+$ yarn ios
+```
+
+When using `figwheel-main` figwheel bridge will take care of auto
+refreshing the application for you when figwheel reloads code.
+
+You can see this behavior by editing the `src/awesome/main.cljs`
+file. Try changing the `"HELLO"` to `"HELLO THERE"`. You should see
+the application change when you save `src/awesome/main.cljs`.
 
 ## Configuration options
 
 These are the options that you can pass in the configuration Object to
 `start`.
 
-`appName`: (required) the name that you created your React Native
+`appName`: (required for react-native) the name that you created your React Native
 project with.
 
 `optionsUrl`: (optional) a url that will resolve to a
-`cljsc_opts.json` file. I modifed figwheel-main to output this file as
+`cljsc_opts.json` file. I modified figwheel-main to output this file as
 a JSON version of the `cljsc_opts.edn` file that the ClojureScript
 compiler outputs. This contains all the information needed to
 effectively boostrap and load a ClojureScript application. If a
@@ -369,7 +414,7 @@ in `src/awesome/main.cljs` this looks like:
 
 This code heavily modified from the `figwheel-bridge.js` file in
 `https://github.com/drapanjanas/re-natal` which in turn was taken from
-the now non-existant
+the now non-existent
 `https://github.com/decker405/figwheel-react-native`.
 
 
