@@ -69,7 +69,7 @@ ClojureScript ns forms like this:
 (ns example.main
   (:require 
     [react :as react]
-	[react-native :as rn]))
+    [react-native :as rn]))
 	
 ;; now rn/Text is available here	
 ```
@@ -127,30 +127,18 @@ Install your CLI of choice according to the instructions on that page.
 Once things are installed you can then follow the instructions below
 to get an ClojureScript project setup for Figwheel development.
 
-## React Native CLI
+## Create React Native project
+
 
 Initialize a project:
+
+For `React Native CLI` do:
 
 ```shell
 $ npx react-native init MyAwesomeProject
 ```
 
-This will create an initial React Native project. Before you go any
-further you will want to ensure that everything is setup so that you can
-launch and run your application in a simulator.
-
-Change in into the `MyAwesomeProject` directory and launch a simulator like so:
-
-```shell
-$ npx react-native run-ios  # or react-native run-android
-```
-
-If everything is set up correctly this should launch a phone simulator
-with the RN application defined in `index.js` and `App.js`.
-
-## Expo CLI
-
-Initialize a project:
+For `Expo CLI` do:
 
 ```shell
 $ npx expo init MyAwesomeProject
