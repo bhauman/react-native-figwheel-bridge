@@ -357,8 +357,8 @@ In `index.js` this looks like:
 ```javascript
 figBridge.start({appName:   "MyAwesomeProject",
                  optionsUrl: "http://localhost:8081/target/public/cljs-out/ios/cljsc_opts.json",
-				 autoRefresh: false // <-- setting auto refresh to false
-				 });
+                 autoRefresh: false // <-- setting auto refresh to false
+                 });
 ```
 
 and control reloading via `figwheel.main`'s [reload hooks](https://figwheel.org/docs/hot_reloading.html#reload-hooks)
