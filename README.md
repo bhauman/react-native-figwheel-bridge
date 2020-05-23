@@ -3,15 +3,6 @@
 Enables React Native projects written in ClojureScript to use
 Figwheel's live reloading and REPL.
 
-## State of this library
-
-> This library is intended to only replace the functionality
-> provided by the `figwheel-bridge.js` file in re-natal
-
-This library is going to change. I'm using it as a base to understand
-the issues when integrating ClojureScript tooling with React Native
-tooling.
-
 The things discovered here will inform changes to Figwheel-main and
 perhaps the ClojureScript compiler.
 
@@ -19,8 +10,8 @@ The ultimate goal is to eliminate the need for this library in the
 first place and be able to support React Native directly from
 figwheel-main or even the ClojureScript compiler.
 
-Because of this flux, this library is going to primarily be compatible
-with `figwheel-main` for now as I'm not going to be make incremental
+Because of this, this library is going to primarily be compatible with
+`figwheel-main` for now as I'm not going to be make incremental
 improvements to both `figwheel-main` and `lein figwheel` during this
 period of discovery.
 
