@@ -142,7 +142,7 @@ launch and run your application in a simulator.
 Change in into the `MyAwesomeProject` directory and launch a simulator like so:
 
 ```shell
-$ yarn ios # or android
+$ npx react-native run-ios # or run-android
 ```
 
 If everything is set up correctly this should launch a phone simulator
